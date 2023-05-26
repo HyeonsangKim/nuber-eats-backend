@@ -31,6 +31,7 @@ import { Dish } from './entities/dish.entity';
 import { EditDishInput } from './dtos/edit-dish.dto';
 import { DeleteDishInput, DeleteDishOutput } from './dtos/delete-dish.dto';
 import { error } from 'console';
+import { GetOrderInput, GetOrderOutput } from 'src/orders/dtos/get-order.dto';
 
 @Injectable()
 export class RestaurantService {
