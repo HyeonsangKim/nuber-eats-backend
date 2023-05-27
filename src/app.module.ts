@@ -19,6 +19,10 @@ import { Dish } from './restaurants/entities/dish.entity';
 import { OrdersModule } from './orders/orders.module';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entitiy';
+import { CommonModule } from './common/common.module';
+import { PaymentsModule } from './payments/payments.module';
+import { Payment } from './payments/entities/payment.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -56,22 +60,38 @@ import { OrderItem } from './orders/entities/order-item.entitiy';
         Dish,
         Order,
         OrderItem,
+        Payment,
       ],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       installSubscriptionHandlers: true,
       driver: ApolloDriver,
       autoSchemaFile: true,
+      subscriptions: {
+        'subscriptions-transport-ws': {
+          onConnect: (connectionParams) => {
+            console.log('connectionParams', connectionParams);
+            const authToken = connectionParams['x-jwt'];
+
+            if (!authToken) {
+              throw new Error('Token is not valid');
+            }
+
+            const token = authToken;
+
+            return { token };
+          },
+        },
+      },
       context: ({ req, connection }) => {
         if (req) {
-          return { user: req['user'] };
+          return { token: req.headers['x-jwt'] };
         } else {
-          console.log(connection);
+          return { token: connection.context['x-jwt'] };
         }
-
-        return { user: req['user'] };
       },
     }),
+    ScheduleModule.forRoot(),
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }),
@@ -84,14 +104,10 @@ import { OrderItem } from './orders/entities/order-item.entitiy';
     UsersModule,
     RestaurantsModule,
     OrdersModule,
+    CommonModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(JwtMiddleware)
-      .forRoutes({ path: '/graphql', method: RequestMethod.POST });
-  }
-}
+export class AppModule {}
