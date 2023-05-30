@@ -98,14 +98,15 @@ export class UsersService {
   }
 
   async editProfile(
-    id: number,
+    userId: number,
     { email, password }: EditProfileInput,
   ): Promise<EditProfileOutput> {
     try {
-      const user = await this.users.findOne({ where: { id } });
+      const user = await this.users.findOne({ where: { id: userId } });
       if (email) {
         user.email = email;
         user.verified = false;
+        await this.verifications.delete({ user: { id: user.id } });
         const verification = await this.verifications.save(
           this.verifications.create({ user }),
         );
